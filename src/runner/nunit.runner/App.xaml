@@ -1,19 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Application
-    xmlns="http://xamarin.com/schemas/2014/forms"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    x:Class="NUnit.Runner.App">
+<Application x:Class="NUnit.Runner.App"
+             xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Visual Elements -->
+            <!--  Visual Elements  -->
             <Style x:Key="defaultBackground" TargetType="VisualElement">
                 <Setter Property="BackgroundColor" Value="#F7F7F7" />
             </Style>
             <Style x:Key="windowsBackground" TargetType="VisualElement">
                 <Setter Property="BackgroundColor" Value="#000000" />
             </Style>
-            
-        	<!-- Buttons -->
+
+            <!--  Buttons  -->
             <Style TargetType="Button">
                 <Setter Property="BackgroundColor" Value="#005B0C" />
                 <Setter Property="BorderColor" Value="#005B0C" />
@@ -23,7 +22,7 @@
                 <Setter Property="TextColor" Value="White" />
             </Style>
 
-            <!-- Labels -->
+            <!--  Labels  -->
             <Style TargetType="Label">
                 <Setter Property="TextColor" Value="#303030" />
             </Style>

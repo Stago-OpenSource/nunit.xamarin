@@ -57,6 +57,10 @@ namespace NUnit.Runner.ViewModel
             ViewFailedResultsCommand = new Command(
                 async o => await Navigation.PushAsync(new ResultsView(new ResultsViewModel(Results.TestResult, false))),
                 o => !HasResults);
+            ListTestsCommand = new Command(
+                async o => await Navigation.PushAsync(new TestListView(new TestListViewModel(_testAssemblies))),
+                o => !HasResults
+                );
         }
 
         /// <summary>
@@ -114,6 +118,7 @@ namespace NUnit.Runner.ViewModel
         public ICommand RunTestsCommand { set; get; }
         public ICommand ViewAllResultsCommand { set; get; }
         public ICommand ViewFailedResultsCommand { set; get; }
+        public ICommand ListTestsCommand { set; get; }
 
         /// <summary>
         /// Adds an assembly to be tested.
@@ -149,7 +154,7 @@ namespace NUnit.Runner.ViewModel
         {
             var runner = new NUnitTestAssemblyRunner(new DefaultTestAssemblyBuilder());
             foreach (var testAssembly in _testAssemblies)
-                await Task.Run(() => runner.Load(testAssembly, new Dictionary<string, string>()));
+                await Task.Run(() => runner.Load(testAssembly, new Dictionary<string, object>()));
             return runner;
         }
     }

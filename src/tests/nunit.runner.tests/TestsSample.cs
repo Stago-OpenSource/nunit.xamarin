@@ -23,6 +23,7 @@
 
 using System;
 using NUnit.Framework;
+using System.Threading;
 
 namespace NUnit.Runner.Tests
 {
@@ -41,6 +42,8 @@ namespace NUnit.Runner.Tests
         [Category("Passing")]
         public void Pass()
         {
+            var context = TestContext.CurrentContext;
+
             TestContext.WriteLine("Capture some output");
             Assert.True(true);
         }
@@ -78,6 +81,14 @@ namespace NUnit.Runner.Tests
         {
             TestContext.WriteLine("I am about to throw!!!");
             throw new NotSupportedException("This method isn't ready yet");
+        }
+
+        [Test]
+        public void LongProcessingTest()
+        {
+            TestContext.WriteLine("I am about to wait!!!");
+            Thread.Sleep(4000);
+            Assert.True(true);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="NUnit.Runner.View.ResultsView"
+<ContentPage x:Class="NUnit.Runner.View.TestListView"
              xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Test Results"
+             Title="Tests"
              BackgroundColor="{DynamicResource defaultBackground}"
              Padding="0">
     <StackLayout BackgroundColor="{DynamicResource defaultBackground}"
@@ -14,7 +14,7 @@
             <ListView HasUnevenRows="true"
                       HorizontalOptions="FillAndExpand"
                       ItemSelected="ViewTest"
-                      ItemsSource="{Binding Results}"
+                      ItemsSource="{Binding Tests}"
                       VerticalOptions="FillAndExpand">
                 <ListView.ItemTemplate>
                     <DataTemplate>
@@ -25,9 +25,7 @@
                                              Orientation="Horizontal"
                                              Padding="0"
                                              Spacing="4">
-                                    <BoxView VerticalOptions="FillAndExpand"
-                                             WidthRequest="10"
-                                             Color="{Binding Color}" />
+                                    <BoxView VerticalOptions="FillAndExpand" WidthRequest="10" />
                                     <StackLayout HorizontalOptions="StartAndExpand"
                                                  Orientation="Vertical"
                                                  Padding="4"

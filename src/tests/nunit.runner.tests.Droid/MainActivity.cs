@@ -24,7 +24,7 @@
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
-
+using NUnit.Framework;
 using NUnit.Runner.Services;
 
 namespace NUnit.Runner.Tests
@@ -37,10 +37,10 @@ namespace NUnit.Runner.Tests
             base.OnCreate(savedInstanceState);
 
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
-
+            
             // This will load all tests within the current project
             var nunit = new NUnit.Runner.App();
-
+            
             // If you want to add tests in another assembly
             //nunit.AddTestAssembly(typeof(MyTests).Assembly);
 
@@ -53,13 +53,15 @@ namespace NUnit.Runner.Tests
 
                     // Information about the tcp listener host and port.
                     // For now, send result as XML to the listening server.
-                    // TcpWriterParamaters = new TcpWriterInfo("10.0.2.2", 13000),
+                    TcpWriterParamaters = new TcpWriterInfo("127.0.0.1", 13000),
 
                     // Creates a NUnit Xml result file on the host file system using PCLStorage library.
                     CreateXmlResultFile = false
                 };
             
             LoadApplication(nunit);
+
+            var context = TestContext.CurrentContext;
         }
     }
 }
