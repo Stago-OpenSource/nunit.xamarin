@@ -30,6 +30,7 @@ namespace NUnit.Runner.Tests
     public class AsyncTests
     {
         [Test]
+        [Category("Critical")]
         public async Task TestAsyncMethodWithoutReturn()
         {
             await AsyncMethodWithoutReturn();

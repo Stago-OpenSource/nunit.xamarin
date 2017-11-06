@@ -21,6 +21,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // ***********************************************************************
 
+using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
@@ -53,11 +54,14 @@ namespace NUnit.Runner.Tests
 
                     // Information about the tcp listener host and port.
                     // For now, send result as XML to the listening server.
-                    TcpWriterParamaters = new TcpWriterInfo("127.0.0.1", 13000),
+                    //TcpWriterParamaters = new TcpWriterInfo("127.0.0.1", 13000),
 
                     // Creates a NUnit Xml result file on the host file system using PCLStorage library.
-                    CreateXmlResultFile = false
-                };
+                    CreateXmlResultFile = false,
+
+                    // If set, the given filter will be used for the all test run process
+                    //AllTestsRunFilter = new CategoryFilter("Critical"),
+            };
             
             LoadApplication(nunit);
 

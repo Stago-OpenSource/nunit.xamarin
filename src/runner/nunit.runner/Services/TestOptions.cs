@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NUnit.Framework.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -25,5 +26,10 @@ namespace NUnit.Runner.Services
         /// Creates a NUnit Xml result file on the host file system using PCLStorage library.
         /// </summary>
         public bool CreateXmlResultFile { get; set; }
+
+        /// <summary>
+        /// Test Filter to use for the All Test run
+        /// </summary>
+        public ITestFilter AllTestsRunFilter { get; set; }
     }
 }

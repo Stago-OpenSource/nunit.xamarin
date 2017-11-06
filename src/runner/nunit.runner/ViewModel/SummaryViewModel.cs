@@ -137,7 +137,13 @@ namespace NUnit.Runner.ViewModel
 
             var runner = await LoadTestAssembliesAsync().ConfigureAwait(false);
 
-            ITestResult result = await Task.Run(() => runner.Run(TestListener.NULL, TestFilter.Empty)).ConfigureAwait(false);
+            ITestFilter testFilter = TestFilter.Empty;
+            if (Options.AllTestsRunFilter != null)
+            {
+                testFilter = Options.AllTestsRunFilter;
+            }
+
+            ITestResult result = await Task.Run(() => runner.Run(TestListener.NULL, testFilter)).ConfigureAwait(false);
 
             _resultProcessor = TestResultProcessor.BuildChainOfResponsability(Options);
             await _resultProcessor.Process(result).ConfigureAwait(false);
