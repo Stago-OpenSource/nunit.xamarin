@@ -57,6 +57,7 @@ dlldata.c
 *.pidb
 *.svclog
 *.scc
+*.csproj.bak
 
 # Chutzpah Test files
 _Chutzpah*
@@ -190,4 +191,11 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 # Cake tools
+.dotnet
 tools/*
+
+# NuGet restore
+*project.lock.json
+
+# Android Xamarin
+Resource.Designer.cs

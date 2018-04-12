@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 //////////////////////////////////////////////////////////////////////
+
 var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Release");
 
@@ -8,124 +9,142 @@ var configuration = Argument("configuration", "Release");
 // PREPARATION
 //////////////////////////////////////////////////////////////////////
 
-// Get whether or not this is a local build.
-var local = BuildSystem.IsLocalBuild;
-var isRunningOnUnix = IsRunningOnUnix();
-var isRunningOnWindows = IsRunningOnWindows();
+var isLocal = BuildSystem.IsLocalBuild;
 var isRunningOnAppVeyor = AppVeyor.IsRunningOnAppVeyor;
-var isPullRequest = AppVeyor.Environment.PullRequest.IsPullRequest;
 
-
-// Versioning
-var packageVersion = "3.0.1";
-var packageModifier = "";
-var displayVersion = "3.0.1";
-
-var semVersion = packageVersion + packageModifier;
+var version = "3.10.1";
+var packageModifier = configuration == "Debug" ? "-dbg" : "";
 
 // Directories
-var basePath = Directory(".");
-var outputDirectory = basePath + Directory("bin") + Directory(configuration);
-var androidDirectory = basePath + Directory("src/runner/nunit.runner.Droid/bin") + Directory(configuration);
-var iosDirectory = basePath + Directory("src/runner/nunit.runner.iOS/bin/AnyCPU") + Directory(configuration);
-var wp81Directory = basePath + Directory("src/runner/nunit.runner.wp81/bin") + Directory(configuration);
+var basePath = Context.Environment.WorkingDirectory.FullPath;
+var outputDirectory = basePath + "/src/nunit.xamarin/bin/" + configuration;
 
-///////////////////////////////////////////////////////////////////////////////
-// SETUP / TEARDOWN
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// SET VERSION
+//////////////////////////////////////////////////////////////////////
 
-Setup(() =>
+Task("Set-Appveyor-Tag")
+    .WithCriteria(() => isRunningOnAppVeyor)
+    .Does(() =>
 {
-    Information("Building version {0} of Nunit.Xamarin.", semVersion);
+    var tag = AppVeyor.Environment.Repository.Tag;
+
+    if (tag.IsTag)
+    {
+        version = tag.Name;
+    }
+    else
+    {
+        var buildNumber = AppVeyor.Environment.Build.Number.ToString("00000");
+        var branch = AppVeyor.Environment.Repository.Branch;
+        var isPullRequest = AppVeyor.Environment.PullRequest.IsPullRequest;
+
+        if (branch == "master" && !isPullRequest)
+        {
+            version = version + "-dev-" + buildNumber + packageModifier;
+        }
+        else
+        {
+            var suffix = "-ci-" + buildNumber + packageModifier;
+
+            if (isPullRequest)
+                suffix += "-pr-" + AppVeyor.Environment.PullRequest.Number;
+            else if (AppVeyor.Environment.Repository.Branch.StartsWith("release", StringComparison.OrdinalIgnoreCase))
+                suffix += "-pre-" + buildNumber;
+            else
+                suffix += "-" + branch;
+
+            // Nuget limits "special version part" to 20 chars. Add one for the hyphen.
+            if (suffix.Length > 21)
+                suffix = suffix.Substring(0, 21);
+
+            version = version + suffix;
+        }
+    }
+
+    AppVeyor.UpdateBuildVersion(version);
 });
 
 //////////////////////////////////////////////////////////////////////
-// TASKS
+// CLEAN/BUILD
 //////////////////////////////////////////////////////////////////////
 
 Task("Clean")
-    .WithCriteria(() => isRunningOnWindows)
     .Does(() =>
 {
-    CleanDirectories(new DirectoryPath[] {
-        outputDirectory, androidDirectory, iosDirectory, wp81Directory});
+    CleanDirectory(outputDirectory);
 });
 
-Task("Restore-NuGet-Packages")
+Task("Restore")
     .Does(() =>
 {
-    NuGetRestore("./nunit.runner.sln", new NuGetRestoreSettings {
+    NuGetRestore("./nunit.xamarin.sln", new NuGetRestoreSettings {
         Source = new List<string> {
             "https://www.nuget.org/api/v2/",
             "https://www.myget.org/F/nunit/api/v2"
-        }
+        },
+        Verbosity = NuGetVerbosity.Quiet
     });
 });
 
 Task("Build")
-    .IsDependentOn("Restore-NuGet-Packages")
+    .IsDependentOn("Restore")
     .Does(() =>
 {
-    if(isRunningOnUnix)
-    {
-        XBuild("./nunit.runner.sln", new XBuildSettings()
-            .SetConfiguration("Debug")
-            .WithTarget("AnyCPU")
-            .WithProperty("TreatWarningsAsErrors", "true")
-            .SetVerbosity(Verbosity.Minimal)
-        );
-    }
-    else
-    {
-        MSBuild("./nunit.runner.sln", new MSBuildSettings()
-            .SetConfiguration(configuration)
-            .SetPlatformTarget(PlatformTarget.MSIL)
-            .WithProperty("TreatWarningsAsErrors", "true")
-            .SetVerbosity(Verbosity.Minimal)
-            .SetNodeReuse(false)
-        );
-    }
+    MSBuild("./nunit.xamarin.sln", new MSBuildSettings()
+        .SetConfiguration(configuration)
+        .SetPlatformTarget(PlatformTarget.MSIL)
+        .WithProperty("TreatWarningsAsErrors", "true")
+        .WithProperty("Version", version)
+        .SetVerbosity(Verbosity.Minimal)
+        .UseToolVersion(MSBuildToolVersion.VS2017)
+    );
+
+    MSBuild("./tests/nunit.runner.tests.uwp/nunit.runner.tests.uwp.csproj", new MSBuildSettings()
+        .SetConfiguration(configuration)
+        .SetPlatformTarget(PlatformTarget.x86)
+        .WithProperty("TreatWarningsAsErrors", "true")
+        .WithProperty("Version", version)
+        .WithProperty("AppxPackageSigningEnabled", "false")
+        .SetVerbosity(Verbosity.Minimal)
+        .UseToolVersion(MSBuildToolVersion.VS2017)
+    );
 });
 
-Task("Create-NuGet-Packages")
+//////////////////////////////////////////////////////////////////////
+// PACKAGE/PUBLISH
+//////////////////////////////////////////////////////////////////////
+
+Task("Package")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    NuGetPack("nuget/nunit.runners.xamarin.nuspec", new NuGetPackSettings
-    {
-        Version = semVersion,
-        BasePath = basePath,
-        OutputDirectory = outputDirectory,
-    });        
+    MSBuild("./src/nunit.xamarin/nunit.xamarin.csproj", new MSBuildSettings()
+        .SetConfiguration(configuration)
+        .SetPlatformTarget(PlatformTarget.MSIL)
+        .WithProperty("TreatWarningsAsErrors", "true")
+        .WithProperty("Version", version)
+        .WithTarget("Pack")
+        .SetVerbosity(Verbosity.Minimal)
+        .UseToolVersion(MSBuildToolVersion.VS2017)
+    );
 });
 
-Task("Publish-NuGet")
-  .IsDependentOn("Create-NuGet-Packages")
-  .WithCriteria(() => local)
-  .Does(() =>
+Task("UploadArtifacts")
+    .WithCriteria(() => isRunningOnAppVeyor)
+    .IsDependentOn("Package")
+    .Does(() =>
 {
-    // Resolve the API key.
-    var apiKey = EnvironmentVariable("NUGET_API_KEY");
-    if(string.IsNullOrEmpty(apiKey)) {
-        throw new InvalidOperationException("Could not resolve NuGet API key.");
-    }
-    
-    // Get the path to the package.
-    var packagePath = outputDirectory + File(string.Concat("nunit.runner.xamarin.", semVersion, ".nupkg"));
-
-    // Push the package.
-    NuGetPush(packagePath, new NuGetPushSettings {
-      ApiKey = apiKey
-    });
+    foreach(var package in System.IO.Directory.GetFiles(outputDirectory, "*.nupkg"))
+        AppVeyor.UploadArtifact(package);
 });
 
 Task("Default")
-  .IsDependentOn("Build");  
-  
-Task("Package")
-  .IsDependentOn("Create-NuGet-Packages");
-  
-Task("Publish")
-  .IsDependentOn("Publish-NuGet");
+  .IsDependentOn("Build");
+
+Task("Appveyor")
+  .IsDependentOn("Set-Appveyor-Tag")
+  .IsDependentOn("Package")
+  .IsDependentOn("UploadArtifacts");
 
 RunTarget(target);
